@@ -2,7 +2,7 @@
 
 Невеликий REST API для нотаток (FastAPI + SQLite). Це полігон для практики **GitHub Actions, Docker і деплою**: код навмисно простий, головна робота відбувається в `.github/` і `Dockerfile`.
 
-<!-- Сюди додаси бейджі CI, коли напишеш workflow -->
+<!-- бейджі CI, коли напишу workflow -->
 
 ## Можливості
 
@@ -14,7 +14,8 @@
 | GET | `/notes?search=&limit=&offset=` | Список нотаток з пошуком і пагінацією |
 | GET | `/notes/{id}` | Одна нотатка |
 | POST | `/notes` | Створити (🔒 якщо задано `API_KEY`) |
-| PUT | `/notes/{id}` | Оновити (🔒) |
+| PUT | `/notes/{id}` | Повністю замінити: потрібні і `title`, і `content` (🔒) |
+| PATCH | `/notes/{id}` | Частково оновити: лише передані поля (🔒) |
 | DELETE | `/notes/{id}` | Видалити (🔒) |
 
 Swagger UI: `http://localhost:8000/docs`

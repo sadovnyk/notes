@@ -32,16 +32,30 @@ def test_create_validation(client, payload):
     assert client.post("/notes", json=payload).status_code == 422
 
 
-def test_update(client):
+def test_put_replaces_whole_note(client):
     note_id = create(client).json()["id"]
-    r = client.put(f"/notes/{note_id}", json={"title": "Updated"})
+    r = client.put(f"/notes/{note_id}", json={"title": "New", "content": ""})
+    assert r.status_code == 200
+    assert r.json()["title"] == "New"
+    assert r.json()["content"] == ""  # перезаписано, а не збережено старе
+
+
+def test_put_requires_all_fields(client):
+    note_id = create(client).json()["id"]
+    assert client.put(f"/notes/{note_id}", json={"title": "Only title"}).status_code == 422
+
+
+def test_patch_updates_only_given_fields(client):
+    note_id = create(client).json()["id"]
+    r = client.patch(f"/notes/{note_id}", json={"title": "Updated"})
     assert r.status_code == 200
     assert r.json()["title"] == "Updated"
-    assert r.json()["content"] == "World"
+    assert r.json()["content"] == "World"  # не змінилось
 
 
 def test_update_missing_returns_404(client):
-    assert client.put("/notes/9999", json={"title": "x"}).status_code == 404
+    assert client.put("/notes/9999", json={"title": "x", "content": "y"}).status_code == 404
+    assert client.patch("/notes/9999", json={"title": "x"}).status_code == 404
 
 
 def test_delete(client):
@@ -64,7 +78,7 @@ def test_search_and_pagination(client):
 
     r = client.get("/notes", params={"limit": 1})
     assert len(r.json()) == 1
-    assert r.json()[0]["title"] == "Learn GitHub Actions"
+    assert r.json()[0]["title"] == "Learn GitHub Actions"  # найновіша першою
 
 
 def test_api_key_required_for_writes(secured_client):

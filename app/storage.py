@@ -1,9 +1,15 @@
+"""Сховище нотаток на SQLite (стандартна бібліотека, без зовнішніх залежностей).
+
+Файл БД задається через DATABASE_PATH — у Docker його варто
+винести у volume, щоб дані не зникали при перезапуску контейнера.
+"""
+
 import sqlite3
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.models import Note, NoteCreate, NoteUpdate
+from app.models import Note, NoteCreate, NoteReplace, NoteUpdate
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS notes (
@@ -79,12 +85,22 @@ class NoteStorage:
             note_id = cur.lastrowid
         return self.get(note_id)  # type: ignore[return-value]
 
+    def replace(self, note_id: int, data: NoteReplace) -> Note | None:
+        """PUT: повністю замінює вміст нотатки."""
+        return self._write(note_id, data.title, data.content)
+
     def update(self, note_id: int, data: NoteUpdate) -> Note | None:
+        """PATCH: змінює лише передані поля."""
         existing = self.get(note_id)
         if existing is None:
             return None
         title = data.title if data.title is not None else existing.title
         content = data.content if data.content is not None else existing.content
+        return self._write(note_id, title, content)
+
+    def _write(self, note_id: int, title: str, content: str) -> Note | None:
+        if self.get(note_id) is None:
+            return None
         now = datetime.now(UTC).isoformat()
         with self._connect() as conn:
             conn.execute(

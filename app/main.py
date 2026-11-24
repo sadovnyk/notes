@@ -1,4 +1,6 @@
-"""
+"""Точка входу FastAPI.
+
+Запуск локально:
     uvicorn app.main:app --reload
 """
 
@@ -8,7 +10,7 @@ import time
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response, status
 
 from app.config import Settings, get_settings
-from app.models import HealthResponse, Note, NoteCreate, NoteUpdate
+from app.models import HealthResponse, Note, NoteCreate, NoteReplace, NoteUpdate
 from app.storage import NoteStorage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -100,7 +102,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return store.create(data)
 
     @app.put("/notes/{note_id}", response_model=Note, dependencies=[Depends(require_api_key)], tags=["notes"])
+    def replace_note(note_id: int, data: NoteReplace, store: NoteStorage = Depends(get_storage)) -> Note:
+        """Повна заміна: потрібно передати і title, і content."""
+        note = store.replace(note_id, data)
+        if note is None:
+            raise HTTPException(status_code=404, detail="Note not found")
+        return note
+
+    @app.patch("/notes/{note_id}", response_model=Note, dependencies=[Depends(require_api_key)], tags=["notes"])
     def update_note(note_id: int, data: NoteUpdate, store: NoteStorage = Depends(get_storage)) -> Note:
+        """Часткове оновлення: передай лише поля, які треба змінити."""
         note = store.update(note_id, data)
         if note is None:
             raise HTTPException(status_code=404, detail="Note not found")
