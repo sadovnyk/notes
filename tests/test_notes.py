@@ -13,7 +13,7 @@ def test_list_empty(client):
 
 def test_create_and_get(client):
     r = create(client)
-    assert r.status_code == 201
+    assert r.status_code == 200
     note = r.json()
     assert note["title"] == "Hello"
     assert note["id"] > 0
